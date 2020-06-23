@@ -8,6 +8,9 @@
 #include <Wire.h>
 #include <Adafruit_INA219.h>
 
+//  Include LCD
+#include <LiquidCrystal.h>
+
 //  Constants for IR
 #define BTNS_SIZE 57
 #define LED_PORT 13
@@ -39,27 +42,28 @@ decode_results results;
 
 Botao btns[BTNS_SIZE];
 
-unsigned int lcom_map[54] = {0, 1, 54, 2, 28, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 15, 53, 18, 19, 22, 23, 24, 20, 21, 50, 26, 51, 35, 30, 36, 32, 33, 34, 4, 31, 55, 52, 56, 39, 40, 41, 42, 43, 44, 45, 46, 47};
-int index;
-
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 void setup(){
   Serial.begin(SERIAL_PORT);
 
-  
   while (!Serial) {
-        delay(1);
+    delay(1);
   }
 
+  lcd.begin(20, 4);
+  delay(100);
+
   startControl();
+  delay(100);
 
   irrecv.enableIRIn(); // Start the receiver
+
 
   pinMode(LED_PORT,OUTPUT);
   
   ina219.begin();
-  index = 0;
-
 
   Serial.println("\n\n\n\tPressione alguma tecla do controle");
 
@@ -79,16 +83,6 @@ void loop() {
           Serial.print(i);
           Serial.print(" - ");
           Serial.print(btns[i].name);
-
-          if(lcom_map[i] != i){
-            Serial.print(" - ");
-            Serial.print(" WRONG ");
-
-          }else{
-            index++;
-          }
-
-          break;
         }
       }
       
@@ -155,18 +149,32 @@ void loop() {
 };
 
 void startControl(){
+    lcd.print("LOADING CONTROL");
+    delay(500);
     for (int i = 0; i < BTNS_SIZE; i++){
       btns[i] = getBTN(i);
     }
+    delay(500);
 }
 
 Botao getBTN(unsigned int index){
   Botao btn;
+  String txt = "";
   Serial.print( "index ");Serial.print( index + 1);
   
+  
+  txt += "index ";
+  txt += index + 1;
+
   index = index * sizeof(Botao) + sizeof(unsigned int);
   EEPROM.get(index, btn);
   Serial.print( "  - ") ;Serial.println( btn.name);
-  delay(20);
+
+  txt += "  - ";
+  txt += btn.name;
+  
+  lcd.print(txt);
+
+  delay(30);
   return btn;
 }
