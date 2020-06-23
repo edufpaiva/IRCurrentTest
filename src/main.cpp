@@ -64,29 +64,32 @@ void setup(){
   pinMode(LED_PORT,OUTPUT);
   
   ina219.begin();
+  lcd.setCursor(0,3);
+  lcd.print("PRESS A BUTTON");
 
-  Serial.println("\n\n\n\tPressione alguma tecla do controle");
-
-};
+}
 
 void loop() {
   if (irrecv.decode(&results)) {
     if(results.value != 4294967295){
+      lcd.clear();
       String name = (String) results.value;
-      Serial.print(name);
+      
+      lcd.setCursor(0, 0);
+      lcd.print(name);
 
       for (unsigned int i = 0; i < BTNS_SIZE; i++){
         if(results.value == btns[i].hexa){
-          Serial.print(" - ");
-          Serial.print(results.value, HEX);
-          Serial.print(" - ");
-          Serial.print(i);
-          Serial.print(" - ");
-          Serial.print(btns[i].name);
+          
+          lcd.setCursor(0,1);
+          lcd.print(results.value, HEX);
+
+          lcd.setCursor(0,2);
+          lcd.print(btns[i].name);
+          
+          break;
         }
       }
-      
-      Serial.println("");
     }
     
     irrecv.resume(); // Receive the next value
@@ -99,7 +102,7 @@ void loop() {
   current_mA = ina219.getCurrent_mA();
   
   if (current_mA > 10 and !same_btn){
-      Serial.println("      .                              .");
+      
       digitalWrite(LED_PORT,LOW);
 
       same_btn = false;
@@ -113,7 +116,6 @@ void loop() {
       while( current_mA > 0 and index < 100){
           values[index] = current_mA;
           index++;
-          // Serial.print("Current:       "); Serial.print(current_mA); Serial.println(" mA");
           current_mA = ina219.getCurrent_mA();
           delay(20);
       }
@@ -127,6 +129,8 @@ void loop() {
               current_mA = values[i];
           }
       }
+      lcd.setCursor(0,3);
+      String txt = String(current_mA) + " mA";
       if(!ok){
           // tone(TONE_PIN, TONE_FREQ, TONE_DURATION); 
           
@@ -137,10 +141,22 @@ void loop() {
               delay(LED_TIME_ERRO);
           }
           delay(TONE_DURATION);
-          Serial.print("Current: _ _ _ _ F A I L _ _ _ _"); Serial.print(current_mA); Serial.println(" mA");
-      }else{
-          Serial.print("Current: _ _ _ _ _ _ _ _ _ _ _ _"); Serial.print(current_mA); Serial.println(" mA");
+          txt += "  F A I L";   
       }
+      lcd.print(txt);
+
+      if(!ok){
+        delay(1000);
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print("    P R E S S");
+        lcd.setCursor(0,1);
+        lcd.print("        A");
+        lcd.setCursor(0,2);
+        lcd.print("   B U T T O N");
+
+      }
+
   }
   if (current_mA <= 0 ) {
       digitalWrite(LED_PORT, HIGH);
@@ -155,25 +171,27 @@ void startControl(){
       btns[i] = getBTN(i);
     }
     delay(500);
+    lcd.setCursor(0,0);
+    lcd.clear();
+    lcd.print("COMPLETE");
+
 }
 
 Botao getBTN(unsigned int index){
+  lcd.clear();
   Botao btn;
-  String txt = "";
-  Serial.print( "index ");Serial.print( index + 1);
   
-  
-  txt += "index ";
-  txt += index + 1;
+  lcd.setCursor(0,0);
+  lcd.print("index " + String(index + 1));
 
   index = index * sizeof(Botao) + sizeof(unsigned int);
   EEPROM.get(index, btn);
-  Serial.print( "  - ") ;Serial.println( btn.name);
-
-  txt += "  - ";
-  txt += btn.name;
   
-  lcd.print(txt);
+  lcd.setCursor(0,1);
+  lcd.print(btn.name);
+
+
+  
 
   delay(30);
   return btn;
