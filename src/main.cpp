@@ -61,30 +61,13 @@ void setup(){
 
   irrecv.enableIRIn(); // Start the receiver
 
-
   pinMode(LED_PORT,OUTPUT);
   
   ina219.begin();
-  
-  // lcd.setCursor(0,0);
-  // lcd.print("TESTE LCD 01----");
-  // delay(1000);
-  // lcd.setCursor(0,1);
-  // lcd.print("TESTE LCD 02----");
-  // delay(1000);
-  // lcd.setCursor(0,2);
-  // lcd.print("TESTE LCD 03----");
-  // delay(1000);
-  // lcd.setCursor(0,3);
-  // lcd.print("TESTE LCD 04----");
-  // delay(5000);
-  
-  
+    
   lcd.clear();  
   lcd.setCursor(0,3);
   lcd.print("PRESS A BUTTON");
-
-
 
 }
 
@@ -96,6 +79,35 @@ void loop() {
 
   current_mA = ina219.getCurrent_mA();
 
+  //! TESTE IR
+  if (irrecv.decode(&results)) {
+    if(results.value != 4294967295){
+      limpaLCD(0);
+      limpaLCD(1);
+      limpaLCD(2);
+      String name = (String) results.value;
+      
+      lcd.setCursor(0, 0);
+      lcd.print(name);
+
+      for (unsigned int i = 0; i < BTNS_SIZE; i++){
+        if(results.value == btns[i].hexa){
+          
+          lcd.setCursor(0,1);
+          lcd.print(results.value, HEX);
+
+          lcd.setCursor(0,2);
+          lcd.print(btns[i].name);
+
+          break;
+        }
+      }
+    }
+
+    irrecv.resume(); // Receive the next value
+  }
+
+  //! TESTE DE CORRENTE
   if (current_mA > 10 and !same_btn){
       
       digitalWrite(LED_PORT,LOW);
@@ -140,49 +152,25 @@ void loop() {
       lcd.setCursor(0,3);
 
       Serial.println(txt);
-      // delay(100);
+      
       lcd.print(txt);
       
 
       if(!ok){
         delay(1000);
-        lcd.clear();
+        limpaLCD(0);
         lcd.setCursor(0,0);
         lcd.print("    P R E S S");
+        limpaLCD(1);
         lcd.setCursor(0,1);
         lcd.print("        A");
+        limpaLCD(2);
         lcd.setCursor(0,2);
         lcd.print("   B U T T O N");
       }
   }
 
-  if (irrecv.decode(&results)) {
-    if(results.value != 4294967295){
-      limpaLCD(0);
-      limpaLCD(1);
-      limpaLCD(2);
-      String name = (String) results.value;
-      
-      lcd.setCursor(0, 0);
-      lcd.print(name);
-
-      for (unsigned int i = 0; i < BTNS_SIZE; i++){
-        if(results.value == btns[i].hexa){
-          
-          lcd.setCursor(0,1);
-          lcd.print(results.value, HEX);
-
-          lcd.setCursor(0,2);
-          lcd.print(btns[i].name);
-
-          break;
-        }
-      }
-    }
-
-    irrecv.resume(); // Receive the next value
-  }
-
+  //! VERIFICA SE O MESMO BOTAO FOI APERTADO
   if (current_mA <= 0 ) {
       digitalWrite(LED_PORT, HIGH);
       same_btn = false;
