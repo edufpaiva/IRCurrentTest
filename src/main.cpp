@@ -33,6 +33,7 @@ struct Botao{
 
 
 void startControl();
+void limpaLCD(int index);
 Botao getBTN(unsigned int index);
 
 
@@ -64,43 +65,37 @@ void setup(){
   pinMode(LED_PORT,OUTPUT);
   
   ina219.begin();
+  
+  // lcd.setCursor(0,0);
+  // lcd.print("TESTE LCD 01----");
+  // delay(1000);
+  // lcd.setCursor(0,1);
+  // lcd.print("TESTE LCD 02----");
+  // delay(1000);
+  // lcd.setCursor(0,2);
+  // lcd.print("TESTE LCD 03----");
+  // delay(1000);
+  // lcd.setCursor(0,3);
+  // lcd.print("TESTE LCD 04----");
+  // delay(5000);
+  
+  
+  lcd.clear();  
   lcd.setCursor(0,3);
   lcd.print("PRESS A BUTTON");
+
+
 
 }
 
 void loop() {
-  if (irrecv.decode(&results)) {
-    if(results.value != 4294967295){
-      lcd.clear();
-      String name = (String) results.value;
-      
-      lcd.setCursor(0, 0);
-      lcd.print(name);
-
-      for (unsigned int i = 0; i < BTNS_SIZE; i++){
-        if(results.value == btns[i].hexa){
-          
-          lcd.setCursor(0,1);
-          lcd.print(results.value, HEX);
-
-          lcd.setCursor(0,2);
-          lcd.print(btns[i].name);
-          
-          break;
-        }
-      }
-    }
-    
-    irrecv.resume(); // Receive the next value
-  }
 
   float current_mA = 0;
-    
+
   bool same_btn = false;
 
   current_mA = ina219.getCurrent_mA();
-  
+
   if (current_mA > 10 and !same_btn){
       
       digitalWrite(LED_PORT,LOW);
@@ -129,10 +124,8 @@ void loop() {
               current_mA = values[i];
           }
       }
-      lcd.setCursor(0,3);
       String txt = String(current_mA) + " mA";
       if(!ok){
-          // tone(TONE_PIN, TONE_FREQ, TONE_DURATION); 
           
           for(int i = 0; i < 20; i++){
               digitalWrite(LED_PORT,HIGH);
@@ -143,7 +136,13 @@ void loop() {
           delay(TONE_DURATION);
           txt += "  F A I L";   
       }
+      limpaLCD(3);
+      lcd.setCursor(0,3);
+
+      Serial.println(txt);
+      // delay(100);
       lcd.print(txt);
+      
 
       if(!ok){
         delay(1000);
@@ -154,14 +153,41 @@ void loop() {
         lcd.print("        A");
         lcd.setCursor(0,2);
         lcd.print("   B U T T O N");
-
       }
-
   }
+
+  if (irrecv.decode(&results)) {
+    if(results.value != 4294967295){
+      limpaLCD(0);
+      limpaLCD(1);
+      limpaLCD(2);
+      String name = (String) results.value;
+      
+      lcd.setCursor(0, 0);
+      lcd.print(name);
+
+      for (unsigned int i = 0; i < BTNS_SIZE; i++){
+        if(results.value == btns[i].hexa){
+          
+          lcd.setCursor(0,1);
+          lcd.print(results.value, HEX);
+
+          lcd.setCursor(0,2);
+          lcd.print(btns[i].name);
+
+          break;
+        }
+      }
+    }
+
+    irrecv.resume(); // Receive the next value
+  }
+
   if (current_mA <= 0 ) {
       digitalWrite(LED_PORT, HIGH);
       same_btn = false;
   }
+
 };
 
 void startControl(){
@@ -190,9 +216,11 @@ Botao getBTN(unsigned int index){
   lcd.setCursor(0,1);
   lcd.print(btn.name);
 
-
-  
-
   delay(30);
   return btn;
+}
+
+void limpaLCD(int index){
+  lcd.setCursor(0,index);
+  lcd.print("                    ");
 }
