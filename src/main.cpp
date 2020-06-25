@@ -35,19 +35,23 @@ struct Botao{
 void startControl();
 void limpaLCD(int index);
 Botao getBTN(unsigned int index);
-
+// void verifica_sequencia(int code);
 
 IRrecv irrecv(RECV_PIN);
 
 decode_results results;
 
 Botao btns[BTNS_SIZE];
+// const int sequencia[] = {0, 48, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 15, 48, 18, 24, 20, 19, 48, 21, 26, 28, 30, 32, 31, 34, 20, 21, 49, 35, 23, 50, 5, 51, 44, 45, 46, 47, 52, 41, 42};
+// int index;
+// int falhas;
 
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 void setup(){
   Serial.begin(SERIAL_PORT);
+  
 
   while (!Serial) {
     delay(1);
@@ -60,15 +64,22 @@ void setup(){
   delay(100);
 
   irrecv.enableIRIn(); // Start the receiver
+  delay(100);
 
   pinMode(LED_PORT,OUTPUT);
+  delay(100);
   
   ina219.begin();
+  delay(100);
     
+  // index = 0;
+  // falhas = 0;
+  delay(100);
+
   lcd.clear();  
   lcd.setCursor(0,3);
   lcd.print("PRESS A BUTTON");
-
+  delay(100);
 }
 
 void loop() {
@@ -89,24 +100,22 @@ void loop() {
       
       lcd.setCursor(0, 0);
       lcd.print(name);
+      
+      lcd.setCursor(0,1);
+      lcd.print(results.value, HEX);
 
       for (unsigned int i = 0; i < BTNS_SIZE; i++){
         if(results.value == btns[i].hexa){
-          
-          lcd.setCursor(0,1);
-          lcd.print(results.value, HEX);
-
           lcd.setCursor(0,2);
-          lcd.print(btns[i].name);
-
+          lcd.print(String(i) + " - " +btns[i].name);
+          // verifica_sequencia(i);
           break;
         }
       }
     }
 
-    irrecv.resume(); // Receive the next value
+    irrecv.resume(); 
   }
-
   //! TESTE DE CORRENTE
   if (current_mA > 10 and !same_btn){
       
@@ -124,7 +133,7 @@ void loop() {
           values[index] = current_mA;
           index++;
           current_mA = ina219.getCurrent_mA();
-          delay(20);
+          delay(1);
       }
 
       for(int i = 0; i <= index; i++){
@@ -154,8 +163,6 @@ void loop() {
       Serial.println(txt);
       
       lcd.print(txt);
-      
-
       if(!ok){
         delay(1000);
         limpaLCD(0);
@@ -212,3 +219,26 @@ void limpaLCD(int index){
   lcd.setCursor(0,index);
   lcd.print("                    ");
 }
+
+// void verifica_sequencia(int code){
+//   Serial.println(String(code));
+//   if (sequencia[index] == code){
+//     index++;
+//     falhas = 0;
+//   }else{
+//     lcd.setCursor(13,2);
+//     lcd.print("FAIL");
+//     falhas++;
+//     if(falhas >= 3){
+//       lcd.clear();
+//       lcd.setCursor(0,0);
+//       lcd.print("CONTOLHE COM FALHA");
+//       lcd.setCursor(0,1);
+//       lcd.print("DE SEQUENCIA");
+//       delay(3000);
+//       lcd.setCursor(2,2);
+//       lcd.print(" R E S T A R T");
+//     }
+//   }
+
+// }
