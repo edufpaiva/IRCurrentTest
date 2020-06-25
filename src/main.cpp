@@ -35,16 +35,16 @@ struct Botao{
 void startControl();
 void limpaLCD(int index);
 Botao getBTN(unsigned int index);
-// void verifica_sequencia(int code);
+void verifica_sequencia(int code);
 
 IRrecv irrecv(RECV_PIN);
 
 decode_results results;
 
 
-// const int sequencia[] = {0, 48, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 15, 48, 18, 24, 20, 19, 48, 21, 26, 28, 30, 32, 31, 34, 20, 21, 49, 35, 23, 50, 5, 51, 44, 45, 46, 47, 52, 41, 42};
-// int index;
-// int falhas;
+const int sequencia[] = {0, 48, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 15, 48, 18, 24, 20, 19, 48, 21, 26, 28, 30, 32, 31, 34, 20, 21, 49, 35, 23, 50, 5, 51, 44, 45, 46, 47, 52, 41, 42};
+int index;
+int falhas;
 
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
@@ -62,8 +62,8 @@ void setup(){
   pinMode(LED_PORT,OUTPUT);
   ina219.begin();
 
-  // index = 0;
-  // falhas = 0;
+  index = 0;
+  falhas = 0;
 
   lcd.clear();  
   lcd.setCursor(0,1);
@@ -97,7 +97,7 @@ void loop() {
         if(results.value == btn.hexa){
           lcd.setCursor(0,2);
           lcd.print(String(i) + " - " + btn.name);
-          // verifica_sequencia(i);
+          verifica_sequencia(i);
           break;
         }
       }
@@ -189,25 +189,25 @@ void limpaLCD(int index){
   lcd.print("                    ");
 }
 
-// void verifica_sequencia(int code){
-//   Serial.println(String(code));
-//   if (sequencia[index] == code){
-//     index++;
-//     falhas = 0;
-//   }else{
-//     lcd.setCursor(13,2);
-//     lcd.print("FAIL");
-//     falhas++;
-//     if(falhas >= 3){
-//       lcd.clear();
-//       lcd.setCursor(0,0);
-//       lcd.print("CONTOLHE COM FALHA");
-//       lcd.setCursor(0,1);
-//       lcd.print("DE SEQUENCIA");
-//       delay(3000);
-//       lcd.setCursor(2,2);
-//       lcd.print(" R E S T A R T");
-//     }
-//   }
+void verifica_sequencia(int code){
+  Serial.println(String(code));
+  if (sequencia[index] == code){
+    index++;
+    falhas = 0;
+  }else{
+    lcd.setCursor(13,2);
+    lcd.print("FAIL");
+    falhas++;
+    if(falhas >= 3){
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("CONTOLHE COM FALHA");
+      lcd.setCursor(0,1);
+      lcd.print("DE SEQUENCIA");
+      delay(3000);
+      lcd.setCursor(2,2);
+      lcd.print(" R E S T A R T");
+    }
+  }
 
-// }
+}
