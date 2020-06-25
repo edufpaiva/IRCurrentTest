@@ -13,6 +13,7 @@
 
 //  Constants for IR
 #define BTNS_SIZE 57
+#define BTNS_LCOM_SEQ 41
 #define LED_PORT 13
 #define SERIAL_PORT 115200
 #define RECV_PIN  9
@@ -89,13 +90,13 @@ void loop() {
       lcd.setCursor(0, 0);
       lcd.print(name);
       
-      lcd.setCursor(0,1);
+      lcd.setCursor(10,0);
       lcd.print(results.value, HEX);
 
       for (unsigned int i = 0; i < BTNS_SIZE; i++){
         Botao btn = getBTN(i);
         if(results.value == btn.hexa){
-          lcd.setCursor(0,2);
+          lcd.setCursor(0,1);
           lcd.print(String(i) + " - " + btn.name);
           verifica_sequencia(i);
           break;
@@ -164,6 +165,19 @@ void loop() {
         lcd.setCursor(0,2);
         lcd.print("   B U T T O N");
       }
+
+      if(index >= 41){
+        index = 0;
+        falhas = 0;
+        delay(1000);
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print("CONTROLE OK");
+        lcd.setCursor(0,2);
+        delay(1000);
+        lcd.print("PROXIMO");
+        
+      }
   }
 
   //! VERIFICA SE O MESMO BOTAO FOI APERTADO
@@ -195,8 +209,10 @@ void verifica_sequencia(int code){
     index++;
     falhas = 0;
   }else{
-    lcd.setCursor(13,2);
+    lcd.setCursor(16,1);
     lcd.print("FAIL");
+    lcd.setCursor(0,2);
+    lcd.print("Expec: " + String(getBTN(sequencia[index]).name));
     falhas++;
     if(falhas >= 3){
       lcd.clear();
@@ -207,6 +223,12 @@ void verifica_sequencia(int code){
       delay(3000);
       lcd.setCursor(2,2);
       lcd.print(" R E S T A R T");
+      index = 0;
+      falhas = 0;
+      delay(1);
+      lcd.clear();
+      lcd.print("PRESS A BUTTON");
+      
     }
   }
 
