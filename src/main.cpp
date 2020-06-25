@@ -41,7 +41,7 @@ IRrecv irrecv(RECV_PIN);
 
 decode_results results;
 
-Botao btns[BTNS_SIZE];
+
 // const int sequencia[] = {0, 48, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 15, 48, 18, 24, 20, 19, 48, 21, 26, 28, 30, 32, 31, 34, 20, 21, 49, 35, 23, 50, 5, 51, 44, 45, 46, 47, 52, 41, 42};
 // int index;
 // int falhas;
@@ -58,28 +58,16 @@ void setup(){
   }
 
   lcd.begin(20, 4);
-  delay(100);
-
-  startControl();
-  delay(100);
-
   irrecv.enableIRIn(); // Start the receiver
-  delay(100);
-
   pinMode(LED_PORT,OUTPUT);
-  delay(100);
-  
   ina219.begin();
-  delay(100);
-    
+
   // index = 0;
   // falhas = 0;
-  delay(100);
 
   lcd.clear();  
-  lcd.setCursor(0,3);
+  lcd.setCursor(0,1);
   lcd.print("PRESS A BUTTON");
-  delay(100);
 }
 
 void loop() {
@@ -105,9 +93,10 @@ void loop() {
       lcd.print(results.value, HEX);
 
       for (unsigned int i = 0; i < BTNS_SIZE; i++){
-        if(results.value == btns[i].hexa){
+        Botao btn = getBTN(i);
+        if(results.value == btn.hexa){
           lcd.setCursor(0,2);
-          lcd.print(String(i) + " - " +btns[i].name);
+          lcd.print(String(i) + " - " + btn.name);
           // verifica_sequencia(i);
           break;
         }
@@ -185,33 +174,13 @@ void loop() {
 
 };
 
-void startControl(){
-    lcd.print("LOADING CONTROL");
-    delay(500);
-    for (int i = 0; i < BTNS_SIZE; i++){
-      btns[i] = getBTN(i);
-    }
-    delay(500);
-    lcd.setCursor(0,0);
-    lcd.clear();
-    lcd.print("COMPLETE");
-
-}
-
 Botao getBTN(unsigned int index){
-  lcd.clear();
+
   Botao btn;
   
-  lcd.setCursor(0,0);
-  lcd.print("index " + String(index + 1));
-
   index = index * sizeof(Botao) + sizeof(unsigned int);
   EEPROM.get(index, btn);
-  
-  lcd.setCursor(0,1);
-  lcd.print(btn.name);
 
-  delay(30);
   return btn;
 }
 
