@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
 //! STRINGS EN
-// #define STR_PRESS_BTN "PRESS A BUTTON"
+// #define STR_PRESS_A_BTN "PRESS A BUTTON"
 // #define STR_MA " Ma"
 // #define STR_FAIL " F A I L"
 // #define STR_PRESS "    P R E S S"
@@ -15,7 +15,7 @@
 // #define STR_RESTART " R E S T A R T"
 // #define STR_ ""
 //!	STRINGS PT_BR
-#define STR_PRESS_BTN "APERTE UM BOTAO"
+#define STR_PRESS_A_BTN "APERTE UM BOTAO"
 #define STR_MA " Ma"
 #define STR_FAIL " F A L H A"
 #define STR_PRESS "    A P E R T E"
@@ -49,7 +49,7 @@ decode_results results;
 #define MIN_CURRENT_MA 100
 
 //	LED
-#define LED_PORT 13			
+#define LED_PORT 13
 #define LED_TIME_ERRO 20
 
 //	TONE
@@ -60,8 +60,8 @@ decode_results results;
 #define TONE_TIME_NEG 1000
 
 #define SERIAL_PORT 115200
-#define BTNS_SIZE 57 		// 	quantity of buttons saved on EEPROM
-#define BTNS_LCOM_SEQ 41	//	quantity of buttons on lcom sequence
+#define BTNS_SIZE 57      // 	quantity of buttons saved on EEPROM
+#define BTNS_LCOM_SEQ 41  //	quantity of buttons on lcom sequence
 
 //	LCD
 #define LCD_COL 20
@@ -111,7 +111,7 @@ void loop() {
 
     current_mA = ina219.getCurrent_mA();
 
-    //! TESTE IR
+    //! IR TEST
     if (irrecv.decode(&results)) {
         if (results.value != 4294967295) {
             clearLCDLine(0);
@@ -130,7 +130,7 @@ void loop() {
                 if (results.value == btn.hexa) {
                     lcd.setCursor(0, 1);
                     lcd.print(String(i) + " - " + btn.name);
-					//	VERIFICA SE A SEQUENCIA APERTADA É CORRETA
+                    //	VERIFICA SE A SEQUENCIA APERTADA É CORRETA
                     verifySequence(i);
                     break;
                 }
@@ -205,7 +205,6 @@ void loop() {
         same_btn = false;
     }
 
-
     //! VERIFY THE END OF THE SEQUENCE
     if (seq_index >= 40) {
         seq_index = 0;
@@ -234,7 +233,6 @@ Button getBTN(unsigned int btn_index) {
     return btn;
 }
 
-
 /**
  * 		Clear a single line from liquid cristal display.
  * 		@param lcd_index The index of lcd to clear.
@@ -253,8 +251,8 @@ bool verifySequence(int code) {
     if (sequence[seq_index] == code) {
         seq_index++;
         fail_n = 0;
-		tone(TONE_PIN, TONE_FREQ_POS, TONE_TIME_POS);
-		return true;
+        tone(TONE_PIN, TONE_FREQ_POS, TONE_TIME_POS);
+        return true;
     } else {
         lcd.setCursor(16, 1);
         lcd.print("FAIL");
@@ -262,7 +260,7 @@ bool verifySequence(int code) {
         lcd.print("Expec: " + String(getBTN(sequence[seq_index]).name));
         fail_n++;
         if (fail_n >= 3) {
-			tone(TONE_PIN, TONE_FREQ_NEG, TONE_TIME_NEG);
+            tone(TONE_PIN, TONE_FREQ_NEG, TONE_TIME_NEG);
             lcd.clear();
             lcd.setCursor(0, 0);
             lcd.print(STR_FAIL_CONTROL);
@@ -275,8 +273,8 @@ bool verifySequence(int code) {
             fail_n = 0;
             delay(1);
             lcd.clear();
-            lcd.print(STR_PRESS_BTN);
+            lcd.print(STR_PRESS_A_BTN);
         }
-		return false;
+        return false;
     }
 }
