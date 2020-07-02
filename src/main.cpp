@@ -5,8 +5,8 @@
 #include <IRremote.h>
 
 //  Includes for Current Test
-#include <Wire.h>
 #include <Adafruit_INA219.h>
+#include <Wire.h>
 
 //  Include LCD
 #include <LiquidCrystal.h>
@@ -19,17 +19,21 @@
 #define RECV_PIN 9
 
 //  Constants for Current
-#define TONE_PIN 6
-#define TONE_DURATION 1000
-#define TONE_FREQ 500
 #define LED_TIME_ERRO 20
 #define MIN_CURRENT_MA 100
 
+//	TONE
+#define TONE_PIN 6
+#define TONE_TIME_POS 200
+#define TONE_FREQ_POS 200  // entre 150 e 200 ta bom
+#define TONE_FREQ_NEG 50
+#define TONE_TIME_NEG 1000
+
 Adafruit_INA219 ina219;
 
-struct Botao{
-	unsigned long hexa;
-	char name[10];
+struct Botao {
+    unsigned long hexa;
+    char name[10];
 };
 
 void startControl();
@@ -48,188 +52,183 @@ int falhas;
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
-void setup(){
-	Serial.begin(SERIAL_PORT);
+void setup() {
+    Serial.begin(SERIAL_PORT);
 
-	while (!Serial)
-	{
-		delay(1);
-	}
+    while (!Serial) {
+        delay(1);
+    }
 
-	lcd.begin(20, 4);
-	irrecv.enableIRIn(); // Start the receiver
-	pinMode(LED_PORT, OUTPUT);
-	ina219.begin();
+    lcd.begin(20, 4);
+    irrecv.enableIRIn();  // Start the receiver
+    pinMode(LED_PORT, OUTPUT);
+    ina219.begin();
 
-	seq_index = 0;
-	falhas = 0;
+    seq_index = 0;
+    falhas = 0;
 
-	lcd.clear();
-	lcd.setCursor(0, 1);
-	lcd.print("PRESS A BUTTON");
+    lcd.clear();
+    lcd.setCursor(0, 1);
+    lcd.print("PRESS A BUTTON");
 }
 
-void loop(){
+void loop() {
+    float current_mA = 0;
 
-	float current_mA = 0;
+    bool same_btn = false;
 
-	bool same_btn = false;
+    current_mA = ina219.getCurrent_mA();
 
-	current_mA = ina219.getCurrent_mA();
+    //! TESTE IR
+    if (irrecv.decode(&results)) {
+        if (results.value != 4294967295) {
+            limpaLCD(0);
+            limpaLCD(1);
+            limpaLCD(2);
+            String name = (String)results.value;
 
-	//! TESTE IR
-	if (irrecv.decode(&results)){
-		if (results.value != 4294967295){
-			limpaLCD(0);
-			limpaLCD(1);
-			limpaLCD(2);
-			String name = (String)results.value;
+            lcd.setCursor(0, 0);
+            lcd.print(name);
 
-			lcd.setCursor(0, 0);
-			lcd.print(name);
+            lcd.setCursor(10, 0);
+            lcd.print(results.value, HEX);
 
-			lcd.setCursor(10, 0);
-			lcd.print(results.value, HEX);
+            for (unsigned int i = 0; i < BTNS_SIZE; i++) {
+                Botao btn = getBTN(i);
+                if (results.value == btn.hexa) {
+                    lcd.setCursor(0, 1);
+                    lcd.print(String(i) + " - " + btn.name);
+					//	VERIFICA SE A SEQUENCIA APERTADA É CORRETA
+                    verifica_sequencia(i);
+                    break;
+                }
+            }
+        }
 
-			for (unsigned int i = 0; i < BTNS_SIZE; i++){
-				Botao btn = getBTN(i);
-				if (results.value == btn.hexa){
-					lcd.setCursor(0, 1);
-					lcd.print(String(i) + " - " + btn.name);
-					verifica_sequencia(i);
-					break;
-				}
-			}
-		}
+        irrecv.resume();
+    }
+    //! TESTE DE CORRENTE
+    if (current_mA > 10 and !same_btn) {
+        digitalWrite(LED_PORT, LOW);
 
-		irrecv.resume();
-	}
-	//! TESTE DE CORRENTE
-	if (current_mA > 10 and !same_btn){
+        same_btn = false;
 
-		digitalWrite(LED_PORT, LOW);
+        int index = 1;
+        int values[100];
+        bool ok = false;
 
-		same_btn = false;
+        values[0] = current_mA;
 
-		int index = 1;
-		int values[100];
-		bool ok = false;
+        while (current_mA > 0 and index < 100) {
+            values[index] = current_mA;
+            index++;
+            current_mA = ina219.getCurrent_mA();
+            delay(1);
+        }
 
-		values[0] = current_mA;
+        for (int i = 0; i <= index; i++) {
+            if (values[i] >= MIN_CURRENT_MA) {
+                current_mA = values[i];
+                ok = true;
+                break;
+            } else if (values[i] >= current_mA) {
+                current_mA = values[i];
+            }
+        }
+        String txt = String(current_mA) + " mA";
+        if (!ok) {
+            for (int i = 0; i < 20; i++) {
+                digitalWrite(LED_PORT, HIGH);
+                delay(LED_TIME_ERRO);
+                digitalWrite(LED_PORT, LOW);
+                delay(LED_TIME_ERRO);
+            }
+            tone(TONE_PIN, TONE_FREQ_NEG, TONE_TIME_NEG);
+            txt += "  F A I L";
+            delay(TONE_TIME_NEG);
+        }
+        limpaLCD(3);
+        lcd.setCursor(0, 3);
 
-		while (current_mA > 0 and index < 100){
-			values[index] = current_mA;
-			index++;
-			current_mA = ina219.getCurrent_mA();
-			delay(1);
-		}
+        Serial.println(txt);
 
-		for (int i = 0; i <= index; i++){
-			if (values[i] >= MIN_CURRENT_MA){
-				current_mA = values[i];
-				ok = true;
-				break;
-			}
-			else if (values[i] >= current_mA){
-				current_mA = values[i];
-			}
-		}
-		String txt = String(current_mA) + " mA";
-		if (!ok){
+        lcd.print(txt);
+        if (!ok) {
+            delay(1000);
+            limpaLCD(0);
+            lcd.setCursor(0, 0);
+            lcd.print("    P R E S S");
+            limpaLCD(1);
+            lcd.setCursor(0, 1);
+            lcd.print("        A");
+            limpaLCD(2);
+            lcd.setCursor(0, 2);
+            lcd.print("   B U T T O N");
+        }
+    }
 
-			for (int i = 0; i < 20; i++){
-				digitalWrite(LED_PORT, HIGH);
-				delay(LED_TIME_ERRO);
-				digitalWrite(LED_PORT, LOW);
-				delay(LED_TIME_ERRO);
-			}
-			tone(TONE_PIN, TONE_FREQ, TONE_DURATION);
-			delay(TONE_DURATION);
-			txt += "  F A I L";
-		}
-		limpaLCD(3);
-		lcd.setCursor(0, 3);
+    //! VERIFICA SE O MESMO BOTAO FOI APERTADO
+    if (current_mA <= 0) {
+        digitalWrite(LED_PORT, HIGH);
+        same_btn = false;
+    }
 
-		Serial.println(txt);
-
-		lcd.print(txt);
-		if (!ok){
-			delay(1000);
-			limpaLCD(0);
-			lcd.setCursor(0, 0);
-			lcd.print("    P R E S S");
-			limpaLCD(1);
-			lcd.setCursor(0, 1);
-			lcd.print("        A");
-			limpaLCD(2);
-			lcd.setCursor(0, 2);
-			lcd.print("   B U T T O N");
-		}
-	}
-
-	//! VERIFICA SE O MESMO BOTAO FOI APERTADO
-	if (current_mA <= 0){
-		digitalWrite(LED_PORT, HIGH);
-		same_btn = false;
-	}
-
-	if (seq_index >= 40){
-		Serial.println(String(seq_index) + " IF");
-		seq_index = 0;
-		falhas = 0;
-		delay(1000);
-		lcd.clear();
-		lcd.setCursor(0, 0);
-		lcd.print("CONTROLE OK");
-		lcd.setCursor(0, 2);
-		delay(1000);
-		lcd.print("PROXIMO");
-	}
-	else{
-		Serial.println(String(seq_index) + " else");
-	}
+    if (seq_index >= 40) {
+        Serial.println(String(seq_index) + " IF");
+        seq_index = 0;
+        falhas = 0;
+        delay(1000);
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("CONTROLE OK");
+        lcd.setCursor(0, 2);
+        delay(1000);
+        lcd.print("PROXIMO");
+    } else {
+        Serial.println(String(seq_index) + " else");
+    }
 };
 
-Botao getBTN(unsigned int btn_index){
+Botao getBTN(unsigned int btn_index) {
+    Botao btn;
 
-	Botao btn;
+    btn_index = btn_index * sizeof(Botao) + sizeof(unsigned int);
+    EEPROM.get(btn_index, btn);
 
-	btn_index = btn_index * sizeof(Botao) + sizeof(unsigned int);
-	EEPROM.get(btn_index, btn);
-
-	return btn;
+    return btn;
 }
 
-void limpaLCD(int lcd_index){
-	lcd.setCursor(0, lcd_index);
-	lcd.print("                    ");
+void limpaLCD(int lcd_index) {
+    lcd.setCursor(0, lcd_index);
+    lcd.print("                    ");
 }
 
-void verifica_sequencia(int code){
-	if (sequencia[seq_index] == code){
-		seq_index++;
-		falhas = 0;
-	}
-	else{
-		lcd.setCursor(16, 1);
-		lcd.print("FAIL");
-		lcd.setCursor(0, 2);
-		lcd.print("Expec: " + String(getBTN(sequencia[seq_index]).name));
-		falhas++;
-		if (falhas >= 3){
-			lcd.clear();
-			lcd.setCursor(0, 0);
-			lcd.print("CONTOLHE COM FALHA");
-			lcd.setCursor(0, 1);
-			lcd.print("DE SEQUENCIA");
-			delay(3000);
-			lcd.setCursor(2, 2);
-			lcd.print(" R E S T A R T");
-			seq_index = 0;
-			falhas = 0;
-			delay(1);
-			lcd.clear();
-			lcd.print("PRESS A BUTTON");
-		}
-	}
+void verifica_sequencia(int code) {
+    if (sequencia[seq_index] == code) {
+        seq_index++;
+        falhas = 0;
+		tone(TONE_PIN, TONE_FREQ_POS, TONE_TIME_POS);
+    } else {
+        lcd.setCursor(16, 1);
+        lcd.print("FAIL");
+        lcd.setCursor(0, 2);
+        lcd.print("Expec: " + String(getBTN(sequencia[seq_index]).name));
+        falhas++;
+        if (falhas >= 3) {
+			tone(TONE_PIN, TONE_FREQ_NEG, TONE_TIME_NEG);
+            lcd.clear();
+            lcd.setCursor(0, 0);
+            lcd.print("CONTOLHE COM FALHA");
+            lcd.setCursor(0, 1);
+            lcd.print("DE SEQUENCIA");
+            delay(3000);
+            lcd.setCursor(2, 2);
+            lcd.print(" R E S T A R T");
+            seq_index = 0;
+            falhas = 0;
+            delay(1);
+            lcd.clear();
+            lcd.print("PRESS A BUTTON");
+        }
+    }
 }
