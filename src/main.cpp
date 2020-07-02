@@ -220,9 +220,9 @@ void loop() {
 };
 
 /**
- *  	Get a Botao from EEPROM.
+ *  	Get a Button from EEPROM.
  * 		@param index The index of btn in EEPROM.
- * 		@returns {Botao} Returns a Botao object.
+ * 		@returns {Botao} Returns a Button object.
 */
 Button getBTN(unsigned int btn_index) {
     Button btn;
