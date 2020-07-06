@@ -30,7 +30,7 @@
 #define STR_SEQUENCE "DE SEQUENCIA"
 #define STR_CONTROL_OK "CONTROLE OK"
 #define STR_SEQUENCE_OK "SEQUENCIA OK"
-#define STR_FAIL_SPLIT " F A L H A"
+#define STR_FAIL_SPLIT " FALHA"
 #define STR_PRESS_A_BTN "APERTE UM BOTAO"
 #define STR_FAIL_CONTROL "CONTOLHE COM FALHA"
 
@@ -97,6 +97,9 @@ int seq_index;
 int fail_n;
 bool sequence_ok = false;
 
+float vCurrent[10];
+int index_current = 0;
+
 void setup() {
     Serial.begin(SERIAL_PORT);
 
@@ -126,12 +129,14 @@ void setup() {
 }
 
 void loop() {
-
     float current_mA = 0;
 
     current_mA = ina219.getCurrent_mA();
 
-    // Serial.println(current_mA);
+    vCurrent[index_current] = current_mA;
+    index_current++;
+    if (index_current >= 10) index_current = 0;
+    Serial.println(current_mA);
     //! IR TEST
     if (irrecv.decode(&results)) {
         if (results.value != 4294967295) {
@@ -144,7 +149,7 @@ void loop() {
             lcd.setCursor(10, 0);
             lcd.print(results.value, HEX);
 
-            Serial.println(name + " " +String(results.value, HEX));
+            Serial.println(name + " " + String(results.value, HEX));
 
             for (unsigned int i = 0; i < BTNS_SIZE; i++) {
                 Button btn = getBTN(i);
@@ -189,7 +194,6 @@ void loop() {
         }
 
         irrecv.resume();
-
     }
 
     //! CURRENT TEEST
@@ -197,9 +201,21 @@ void loop() {
         digitalWrite(LED_PORT, LOW);
         clearLCDLine(3);
         lcd.setCursor(0, 3);
-        lcd.print(String(current_mA) + STR_MA);
-        if(seq_index >= IR_SEQUENCE)delay(400);
-        else delay(100);
+
+        int qtd = 0;
+        float ctemp = 0;
+        for (size_t i = 0; i < 10; i++) {
+            if (vCurrent[i] > 2) {
+                qtd++;
+                ctemp += vCurrent[i];
+            }
+        }
+
+        lcd.print(String(ctemp / qtd) + STR_MA);
+        if (seq_index >= IR_SEQUENCE)
+            delay(400);
+        else
+            delay(100);
     }
 
     //! VERIFY THE END OF THE SEQUENCE
@@ -232,9 +248,6 @@ void loop() {
         delay(1000);
         lcd.print(STR_NEXT);
     }
-
-
-
 };
 
 /**
