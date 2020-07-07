@@ -1,5 +1,17 @@
 #include <Arduino.h>
 
+//  Includes for IR
+#include <EEPROM.h>
+#include <IRremote.h>
+
+//  Includes for Current Test
+#include <Adafruit_INA219.h>
+#include <Wire.h>
+
+//  Include LCD
+#include <LiquidCrystal.h>
+
+
 //! STRINGS EN
 // #define STR_PRESS_A_BTN "PRESS A BUTTON"
 // #define STR_MA " Ma"
@@ -19,7 +31,7 @@
 //!	STRINGS PT_BR
 #define STR_ ""
 #define STR_A "        U M"
-#define STR_MA " Ma"
+#define STR_MA " mA"
 #define STR_NAME "Nome : "
 #define STR_FAIL "FALHA"
 #define STR_NEXT "PROXIMO"
@@ -30,20 +42,11 @@
 #define STR_SEQUENCE "DE SEQUENCIA"
 #define STR_CONTROL_OK "CONTROLE OK"
 #define STR_SEQUENCE_OK "SEQUENCIA OK"
-#define STR_FAIL_SPLIT " FALHA"
+#define STR_FAIL_SPLIT " NG"
 #define STR_PRESS_A_BTN "APERTE UM BOTAO"
 #define STR_FAIL_CONTROL "CONTOLHE COM FALHA"
 
-//  Includes for IR
-#include <EEPROM.h>
-#include <IRremote.h>
 
-//  Includes for Current Test
-#include <Adafruit_INA219.h>
-#include <Wire.h>
-
-//  Include LCD
-#include <LiquidCrystal.h>
 
 //  Constants for IR
 #define IR_PIN 9
@@ -244,6 +247,27 @@ void loop() {
         lcd.clear();
         lcd.setCursor(0, 0);
         lcd.print(STR_CONTROL_OK);
+
+        unsigned long init = millis();
+
+        while (millis() - init < 10000) {
+            clearLCDLine(1);
+            lcd.setCursor(0, 1);
+            lcd.print("Aguarde " + String(10 - (unsigned long)(millis() - init) / 1000) + "s");
+            clearLCDLine(2);
+            lcd.setCursor(0, 2);
+
+            current_mA = ina219.getCurrent_mA();
+            if (current_mA < 0) current_mA *= -1;
+            lcd.print(String(current_mA) + STR_MA);
+            delay(400);
+        }
+        clearLCDLine(1);
+        delay(1000);
+
+        clearLCDLine(1, 3);
+        
+
         lcd.setCursor(0, 2);
         delay(1000);
         lcd.print(STR_NEXT);
