@@ -11,7 +11,6 @@
 //  Include LCD
 #include <LiquidCrystal.h>
 
-
 //! STRINGS EN
 // #define STR_PRESS_A_BTN "PRESS A BUTTON"
 // #define STR_MA " Ma"
@@ -45,7 +44,6 @@
 #define STR_FAIL_SPLIT " NG"
 #define STR_PRESS_A_BTN "APERTE UM BOTAO"
 #define STR_FAIL_CONTROL "CONTOLHE COM FALHA"
-
 
 
 //  Constants for IR
@@ -95,7 +93,11 @@ bool verifySequence(int code);
 Button getBTN(unsigned int index);
 void clearLCDLine(unsigned int index, unsigned int lcd_index_fin);
 
-const int sequence[] = {0, 48, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 15, 48, 18, 24, 20, 19, 48, 21, 26, 28, 30, 32, 31, 34, 20, 21, 49, 35, 23, 50, 5, 51, 44, 45, 46, 47, 52, 41, 42, 48, 49, 0};
+//  Sequence of buttons(codes) to be pressed by user
+const int sequence[] = {0, 48, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 15, 48, 18,
+            24, 20, 19, 48, 21, 26, 28, 30, 32, 31, 34, 20, 21, 49, 35, 23, 50,
+            5, 51, 44, 45, 46, 47, 52, 41, 42, 49, 48, 0};
+
 int seq_index;
 int fail_n;
 bool sequence_ok = false;
@@ -223,17 +225,20 @@ void loop() {
 
     //! VERIFY THE END OF THE SEQUENCE
     if (seq_index == IR_SEQUENCE && !sequence_ok) {
+
         tone(TONE_PIN, TONE_FREQ_POS, TONE_TIME_POS);
         delay(500);
         clearLCDLine(0, 2);
+
         lcd.setCursor(0, 0);
         lcd.print(STR_SEQUENCE_OK);
         lcd.setCursor(0, 1);
         lcd.print("PAREAR CONTROLE");
         lcd.setCursor(0, 2);
-        lcd.print("Next : Microfone");
+        lcd.print("Next : Press SCROLL");
 
         sequence_ok = true;
+
     }
 
     //! VERIFY THE END OF THE SEQUENCE
@@ -276,7 +281,7 @@ void loop() {
 
 /**
  *  	Get a Button from EEPROM.
- * 		@param index The index of btn in EEPROM.
+ * 		@param index The index of button in EEPROM.
  * 		@returns {Botao} Returns a Button object.
 */
 Button getBTN(unsigned int btn_index) {
